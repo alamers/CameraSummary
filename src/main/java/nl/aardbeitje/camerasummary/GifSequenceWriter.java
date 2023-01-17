@@ -103,7 +103,11 @@ public class GifSequenceWriter {
     }
 
     public void writeToSequence(RenderedImage img) throws IOException {
-        gifWriter.writeToSequence(new IIOImage(img, null, imageMetaData), imageWriteParam);
+        if (img==null) {
+            System.err.println("unable to read the image so not adding it to the sequence");
+        } else {
+            gifWriter.writeToSequence(new IIOImage(img, null, imageMetaData), imageWriteParam);
+        }
     }
 
     /**
@@ -174,7 +178,7 @@ public class GifSequenceWriter {
         GifSequenceWriter writer = new GifSequenceWriter(output, firstImage.getType(), 2, false);
 
         // write out the first image to our sequence...
-        writer.writeToSequence(firstImage);
+        if(firstImage!=null) writer.writeToSequence(firstImage);
         for (int i = 1; i < images.size() - 1; i++) {
             BufferedImage nextImage = ImageIO.read(images.get(i));
             writer.writeToSequence(nextImage);

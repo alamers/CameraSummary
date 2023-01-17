@@ -17,7 +17,7 @@ import java.util.TimeZone;
 
 public class CameraSummary {
 
-    private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd hh:mm");
+    private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("yyyyMMdd-HHmm");
     private static String signalCliDir;
 
     public static void main(String[] args) throws IOException {
@@ -65,6 +65,12 @@ public class CameraSummary {
                 OutputStream os = new FileOutputStream(output);
                 GifSequenceWriter.compose(is, os);
 
+                if (!output.setLastModified(firstFile.lastModified())) {
+                    System.out.println("Failed to change lastModified date for " + output);
+                }
+
+                
+                
                 os.close();
                 for (FileInputStream fis : is) {
                     fis.close();
@@ -74,7 +80,6 @@ public class CameraSummary {
                     f.delete();
                 }
 
-                output.setLastModified(firstFile.lastModified());
                 notify(output);
 
             }
@@ -83,9 +88,15 @@ public class CameraSummary {
     }
 
     private static void notify(File output) {
+        if (output.getAbsolutePath().toString().contains("not_alarmed")) {
+            System.out.println("Not notifying not-alarmed event");
+            return;
+        }
+        
         ProcessBuilder processBuilder = new ProcessBuilder();
         processBuilder.command(signalCliDir, "-u", "+31623822405", "send", "-m", output.getName(), "+31623822405", "-a", output.getAbsolutePath().toString());
 
+        System.out.println("Notifying for: " +output.getName() );
         try {
             Process process = processBuilder.start();
             BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
@@ -104,7 +115,7 @@ public class CameraSummary {
     }
 
     private static String createFileName(File firstFile) {
-        ZonedDateTime localTime = ZonedDateTime.ofInstant(Instant.ofEpochMilli(firstFile.lastModified()), TimeZone.getDefault().toZoneId());
+        ZonedDateTime localTime = ZonedDateTime.ofInstant(Instant.ofEpochMilli(firstFile.lastModified()), TimeZone.getTimeZone("Europe/Amsterdam").toZoneId());
         String filename = "" + DATE_FORMAT.format(localTime) + ".gif";
         return filename;
     }
