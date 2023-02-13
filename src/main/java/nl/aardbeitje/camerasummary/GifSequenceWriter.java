@@ -2,8 +2,8 @@ package nl.aardbeitje.camerasummary;
 
 import java.awt.image.BufferedImage;
 import java.awt.image.RenderedImage;
+import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Iterator;
 import java.util.List;
@@ -167,8 +167,10 @@ public class GifSequenceWriter {
      * 
      */
 
-    public static void compose(List<? extends InputStream> images, OutputStream os) throws IOException {
-        ImageOutputStream output = new MemoryCacheImageOutputStream(os);
+    public static void compose(List<File> images, OutputStream os) throws IOException {
+        
+        try (ImageOutputStream output = new MemoryCacheImageOutputStream(os)){
+        
 
         // grab the output image type from the first image in the sequence
         BufferedImage firstImage = ImageIO.read(images.get(0));
@@ -185,6 +187,6 @@ public class GifSequenceWriter {
         }
 
         writer.close();
-        output.close();
+        }
     }
 }

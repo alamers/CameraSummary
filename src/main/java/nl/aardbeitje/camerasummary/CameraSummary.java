@@ -3,8 +3,6 @@ package nl.aardbeitje.camerasummary;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileFilter;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -21,8 +19,8 @@ public class CameraSummary {
     private static String signalCliDir;
 
     public static void main(String[] args) throws IOException {
-        
-        if(args.length!=2) {
+
+        if (args.length != 2) {
             System.out.println("Usage: java -jar camerasummary-0.0.1-SNAPSHOT.jar <images directory> <signal-cli-path>");
             System.exit(-1);
         }
@@ -60,20 +58,14 @@ public class CameraSummary {
                 File output = new File(firstFile.getParentFile().getAbsolutePath(), filename);
 
                 System.out.println(output.getAbsolutePath());
-                List<FileInputStream> is = toInputStreamList(group);
 
-                OutputStream os = new FileOutputStream(output);
-                GifSequenceWriter.compose(is, os);
+                try (OutputStream os = new FileOutputStream(output)) {
+                    GifSequenceWriter.compose(group, os);
 
-                if (!output.setLastModified(firstFile.lastModified())) {
-                    System.out.println("Failed to change lastModified date for " + output);
-                }
+                    if (!output.setLastModified(firstFile.lastModified())) {
+                        System.out.println("Failed to change lastModified date for " + output);
+                    }
 
-                
-                
-                os.close();
-                for (FileInputStream fis : is) {
-                    fis.close();
                 }
 
                 for (File f : group) {
@@ -92,11 +84,11 @@ public class CameraSummary {
             System.out.println("Not notifying not-alarmed event");
             return;
         }
-        
+
         ProcessBuilder processBuilder = new ProcessBuilder();
         processBuilder.command(signalCliDir, "-u", "+31623822405", "send", "-m", output.getName(), "+31623822405", "-a", output.getAbsolutePath().toString());
 
-        System.out.println("Notifying for: " +output.getName() );
+        System.out.println("Notifying for: " + output.getName());
         try {
             Process process = processBuilder.start();
             BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
@@ -118,16 +110,6 @@ public class CameraSummary {
         ZonedDateTime localTime = ZonedDateTime.ofInstant(Instant.ofEpochMilli(firstFile.lastModified()), TimeZone.getTimeZone("Europe/Amsterdam").toZoneId());
         String filename = "" + DATE_FORMAT.format(localTime) + ".gif";
         return filename;
-    }
-
-    private static List<FileInputStream> toInputStreamList(List<File> group) {
-        return group.stream().map(f -> {
-            try {
-                return new FileInputStream(f);
-            } catch (FileNotFoundException e) {
-                throw new RuntimeException(e);
-            }
-        }).toList();
     }
 
 }
